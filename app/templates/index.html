@@ -1,0 +1,51 @@
+{% extends "base.html" %}
+{% block title %}Шаблоны 1С{% endblock %}
+
+{% block content %}
+<div style="margin-bottom: 20px;">
+    <form method="get" action="/" style="display: flex; gap: 10px;">
+        <input type="text" name="q" value="{{ query }}" placeholder="Поиск по названию, описанию, тегам..."
+               style="flex: 1;">
+        <button type="submit" class="btn btn-primary">Найти</button>
+        {% if query %}
+        <a href="/" class="btn btn-secondary">Сбросить</a>
+        {% endif %}
+    </form>
+</div>
+
+<p style="color: #6b7280; margin-bottom: 16px;">
+    {% if query %}Найдено: {{ templates|length }}{% else %}Всего: {{ templates|length }}{% endif %} шаблонов
+</p>
+
+{% for tpl in templates %}
+<div class="card" style="cursor: pointer;" onclick="window.location='/{{ tpl.id }}'">
+    <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+        <div style="flex: 1;">
+            <h3 style="color: #a78bfa; margin-bottom: 6px;">
+                <span style="color: #6b7280; font-size: 13px;">#{{ tpl.id }}</span>
+                {{ tpl.name or tpl.description[:60] }}
+            </h3>
+            <p style="color: #9ca3af; font-size: 14px; margin-bottom: 8px;">
+                {{ tpl.description[:200] }}{% if tpl.description|length > 200 %}...{% endif %}
+            </p>
+            {% if tpl.tags %}
+            <div>
+                {% for tag in tpl.tags %}
+                <span class="tag">{{ tag }}</span>
+                {% endfor %}
+            </div>
+            {% endif %}
+        </div>
+    </div>
+</div>
+{% endfor %}
+
+{% if not templates %}
+<div class="card" style="text-align: center; padding: 40px;">
+    <p style="color: #6b7280; font-size: 16px;">
+        {% if query %}Ничего не найдено{% else %}Шаблонов пока нет{% endif %}
+    </p>
+    <a href="/new" class="btn btn-primary" style="margin-top: 16px;">Создать первый шаблон</a>
+</div>
+{% endif %}
+{% endblock %}

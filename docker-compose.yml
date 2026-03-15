@@ -1,0 +1,20 @@
+services:
+  template-search-mcp:
+    build: .
+    container_name: template_search_mcp
+    ports:
+      - "8004:8004"
+    environment:
+      - RESET_CHROMA=true
+      - RESET_CACHE=true
+      - USESSE=false
+      - OPENAI_API_BASE=http://host.docker.internal:1234
+      - OPENAI_API_KEY=lm-studio
+      - OPENAI_MODEL=text-embedding-qwen3-embedding-0.6b
+      - EMBEDDING_MODEL=text-embedding-multilingual-e5-large-instruct
+    volumes:
+      - app_data:/app/data
+    restart: unless-stopped
+
+volumes:
+  app_data:

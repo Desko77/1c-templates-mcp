@@ -1,0 +1,10 @@
+.env
+__pycache__/
+*.pyc
+chroma_db/
+model_cache/
+app.log
+data/
+*.egg-info/
+.venv/
+bsl_console/

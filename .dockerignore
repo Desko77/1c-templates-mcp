@@ -1,0 +1,14 @@
+.env
+__pycache__/
+*.pyc
+chroma_db/
+model_cache/
+app.log
+data/
+.git/
+.gitignore
+.dockerignore
+docker-compose.yml
+*.md
+bsl_console/
+main.py

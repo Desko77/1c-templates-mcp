@@ -1,0 +1,103 @@
+{% extends "base.html" %}
+{% block title %}{% if tpl %}Редактировать{% else %}Новый шаблон{% endif %} - 1C Templates{% endblock %}
+
+{% block content %}
+<h1 style="color: #a78bfa; font-size: 22px; margin-bottom: 16px;">
+    {% if tpl %}Редактировать шаблон #{{ tpl.id }}{% else %}Новый шаблон{% endif %}
+</h1>
+
+{% if errors is defined and errors %}
+<div class="errors">
+    {% for err in errors %}
+    <p>{{ err }}</p>
+    {% endfor %}
+</div>
+{% endif %}
+
+{% set f = form if form is defined and form else tpl %}
+
+<form method="post" action="{% if tpl %}/{{ tpl.id }}/edit{% else %}/new{% endif %}" id="mainForm">
+    <label for="name">Название</label>
+    <input type="text" id="name" name="name" value="{{ f.name if f else '' }}" placeholder="Короткое название шаблона" required>
+    <div class="hint">Минимум 3 символа</div>
+
+    <label for="description">Описание</label>
+    <textarea id="description" name="description" rows="4" placeholder="Подробное описание шаблона..." required>{{ f.description if f else '' }}</textarea>
+    <div class="hint">Минимум 10 символов</div>
+
+    <label for="tags">Теги</label>
+    <input type="text" id="tags" name="tags"
+           value="{{ f.tags | join(', ') if f and f.tags is iterable and f.tags is not string else (f.tags if f and f.tags else '') }}"
+           placeholder="тег1, тег2, тег3">
+    <div class="hint">Через запятую</div>
+
+    <label>Код</label>
+    <iframe id="codeFrame" src="/bsl_console/index.html"
+            style="width:100%; height:500px; border:1px solid #0f3460; border-radius:6px; margin-bottom:8px;"
+            onerror="this.style.display='none'; document.getElementById('codeFallbackWrap').style.display='block'">
+    </iframe>
+    <div id="codeFallbackWrap" style="display:none;">
+        <textarea id="codeFallback" rows="15"
+                  style="font-family: 'Courier New', Consolas, monospace;"
+                  placeholder="Введите BSL-код...">{{ f.code if f else '' }}</textarea>
+    </div>
+    <input type="hidden" name="code" id="codeHidden" value="{{ f.code if f else '' }}">
+    <div class="hint">Минимум 10 символов</div>
+
+    <div style="margin-top: 20px; display: flex; gap: 10px;">
+        <button type="submit" class="btn btn-primary">
+            {% if tpl %}Сохранить{% else %}Создать{% endif %}
+        </button>
+        <a href="{% if tpl %}/{{ tpl.id }}{% else %}/{% endif %}" class="btn btn-secondary">Отмена</a>
+    </div>
+</form>
+
+<script>
+const INITIAL_CODE = {{ (f.code if f else '') | tojson }};
+
+function initEditor() {
+    const frame = document.getElementById('codeFrame');
+    if (!frame || !frame.contentWindow) return false;
+    try {
+        if (frame.contentWindow.updateText) {
+            frame.contentWindow.updateText(INITIAL_CODE);
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+let attempts = 0;
+const timer = setInterval(() => {
+    if (initEditor() || ++attempts > 50) {
+        clearInterval(timer);
+        if (attempts > 50) {
+            // Fallback to textarea
+            document.getElementById('codeFrame').style.display = 'none';
+            document.getElementById('codeFallbackWrap').style.display = 'block';
+        }
+    }
+}, 100);
+
+document.getElementById('mainForm').addEventListener('submit', function(e) {
+    const frame = document.getElementById('codeFrame');
+    let code = '';
+    try {
+        if (frame.contentWindow && frame.contentWindow.getText) {
+            code = frame.contentWindow.getText();
+        }
+    } catch(err) {}
+
+    if (!code) {
+        const fallback = document.getElementById('codeFallback');
+        if (fallback) code = fallback.value;
+    }
+
+    document.getElementById('codeHidden').value = code;
+
+    // Remove fallback textarea name to avoid duplicate
+    const fb = document.getElementById('codeFallback');
+    if (fb) fb.removeAttribute('name');
+});
+</script>
+{% endblock %}

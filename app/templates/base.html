@@ -1,0 +1,130 @@
+<!DOCTYPE html>
+<html lang="ru">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>{% block title %}1C Templates{% endblock %}</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+            background-color: #1a1a2e;
+            color: #e0e0e0;
+            min-height: 100vh;
+        }
+        nav {
+            background: #16213e;
+            padding: 12px 24px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            border-bottom: 1px solid #0f3460;
+        }
+        nav a.brand {
+            color: #a78bfa;
+            font-size: 18px;
+            font-weight: 700;
+            text-decoration: none;
+        }
+        nav .actions a {
+            color: #a78bfa;
+            text-decoration: none;
+            margin-left: 16px;
+            font-weight: 500;
+            padding: 6px 14px;
+            border-radius: 6px;
+            transition: background 0.2s;
+        }
+        nav .actions a:hover { background: #1e3a5f; }
+        nav .actions a.primary {
+            background: #6d28d9;
+            color: #fff;
+        }
+        nav .actions a.primary:hover { background: #7c3aed; }
+        .container {
+            max-width: 1100px;
+            margin: 24px auto;
+            padding: 0 20px;
+        }
+        .card {
+            background: #16213e;
+            border: 1px solid #0f3460;
+            border-radius: 10px;
+            padding: 20px;
+            margin-bottom: 16px;
+            transition: border-color 0.2s;
+        }
+        .card:hover { border-color: #6d28d9; }
+        .btn {
+            display: inline-block;
+            padding: 8px 18px;
+            border: none;
+            border-radius: 6px;
+            font-size: 14px;
+            font-weight: 600;
+            cursor: pointer;
+            text-decoration: none;
+            transition: background 0.2s;
+        }
+        .btn-primary { background: #6d28d9; color: #fff; }
+        .btn-primary:hover { background: #7c3aed; }
+        .btn-danger { background: #dc2626; color: #fff; }
+        .btn-danger:hover { background: #ef4444; }
+        .btn-secondary { background: #374151; color: #e0e0e0; }
+        .btn-secondary:hover { background: #4b5563; }
+        .tag {
+            display: inline-block;
+            background: #1e3a5f;
+            color: #a78bfa;
+            padding: 2px 10px;
+            border-radius: 12px;
+            font-size: 12px;
+            margin-right: 4px;
+            margin-top: 4px;
+        }
+        .errors {
+            background: #451a1a;
+            border: 1px solid #dc2626;
+            border-radius: 8px;
+            padding: 14px;
+            margin-bottom: 16px;
+            color: #fca5a5;
+        }
+        input[type="text"], textarea {
+            width: 100%;
+            padding: 10px 14px;
+            background: #1a1a2e;
+            border: 1px solid #0f3460;
+            border-radius: 6px;
+            color: #e0e0e0;
+            font-size: 14px;
+            font-family: inherit;
+        }
+        input[type="text"]:focus, textarea:focus {
+            outline: none;
+            border-color: #6d28d9;
+        }
+        label {
+            display: block;
+            font-weight: 600;
+            margin-bottom: 6px;
+            margin-top: 16px;
+            color: #a78bfa;
+        }
+        .hint { color: #6b7280; font-size: 13px; margin-top: 4px; }
+    </style>
+    {% block extra_head %}{% endblock %}
+</head>
+<body>
+    <nav>
+        <a href="/" class="brand">1C Templates</a>
+        <div class="actions">
+            <a href="/">Все шаблоны</a>
+            <a href="/new" class="primary">+ Новый</a>
+        </div>
+    </nav>
+    <div class="container">
+        {% block content %}{% endblock %}
+    </div>
+</body>
+</html>

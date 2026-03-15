@@ -1,0 +1,73 @@
+{% extends "base.html" %}
+{% block title %}{{ tpl.name or 'Шаблон' }} - 1C Templates{% endblock %}
+
+{% block content %}
+<div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+    <div>
+        <h1 style="color: #a78bfa; font-size: 22px;">
+            <span style="color: #6b7280; font-size: 14px;">#{{ tpl.id }}</span>
+            {{ tpl.name }}
+        </h1>
+    </div>
+    <div style="display: flex; gap: 8px;">
+        <a href="/{{ tpl.id }}/edit" class="btn btn-primary">Редактировать</a>
+        <form method="post" action="/{{ tpl.id }}/delete" style="display:inline;"
+              onsubmit="return confirm('Удалить шаблон?')">
+            <button type="submit" class="btn btn-danger">Удалить</button>
+        </form>
+    </div>
+</div>
+
+{% if tpl.tags %}
+<div style="margin-bottom: 12px;">
+    {% for tag in tpl.tags %}
+    <span class="tag">{{ tag }}</span>
+    {% endfor %}
+</div>
+{% endif %}
+
+<div class="card" style="margin-bottom: 16px;">
+    <label style="margin-top: 0;">Описание</label>
+    <p style="white-space: pre-wrap; line-height: 1.6;">{{ tpl.description }}</p>
+</div>
+
+<div class="card">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 10px;">
+        <label style="margin: 0;">Код</label>
+        <button class="btn btn-secondary" onclick="copyCode()" id="copyBtn">Копировать</button>
+    </div>
+    <iframe id="codeFrame" src="/bsl_console/index.html" style="width:100%; height:500px; border:1px solid #0f3460; border-radius:6px;"
+            onerror="this.style.display='none'; document.getElementById('codeFallback').style.display='block'">
+    </iframe>
+    <pre id="codeFallback" style="display:none; background:#0d1117; padding:16px; border-radius:6px; overflow-x:auto; font-size:13px; line-height:1.5; white-space:pre-wrap;">{{ tpl.code }}</pre>
+</div>
+
+<script>
+const CODE = {{ tpl.code | tojson }};
+
+function initEditor() {
+    const frame = document.getElementById('codeFrame');
+    if (!frame || !frame.contentWindow) return;
+    try {
+        if (frame.contentWindow.updateText) {
+            frame.contentWindow.updateText(CODE);
+            return true;
+        }
+    } catch(e) {}
+    return false;
+}
+
+let attempts = 0;
+const timer = setInterval(() => {
+    if (initEditor() || ++attempts > 50) clearInterval(timer);
+}, 100);
+
+function copyCode() {
+    navigator.clipboard.writeText(CODE).then(() => {
+        const btn = document.getElementById('copyBtn');
+        btn.textContent = 'Скопировано!';
+        setTimeout(() => btn.textContent = 'Копировать', 2000);
+    });
+}
+</script>
+{% endblock %}
