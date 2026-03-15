@@ -8,3 +8,4 @@ data/
 *.egg-info/
 .venv/
 bsl_console/
+.claude/
