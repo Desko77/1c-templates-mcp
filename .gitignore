@@ -9,3 +9,9 @@ data/
 .venv/
 bsl_console/
 .claude/
+
+# Generated at Docker build from seed_templates.jsonl
+templates.db
+# Local helper artifacts from scripts
+runtime_dump.db
+check.db

@@ -15,8 +15,11 @@ RUN git clone --depth 1 https://github.com/salexdv/bsl_console.git /app/bsl_cons
 
 RUN mkdir -p /app/data /app/model_cache
 
-# Seed database and application code
-COPY templates.db /app/templates.db
+# Seed: JSONL source of truth + build script generate /app/templates.db at build time
+COPY seed_templates.jsonl /app/seed_templates.jsonl
+COPY scripts/ /app/scripts/
+RUN python scripts/build_db_from_jsonl.py --jsonl /app/seed_templates.jsonl --output /app/templates.db
+# Application code last: changes to app/ do not invalidate the DB build layer
 COPY app/ /app/app/
 
 ENV PYTHONUNBUFFERED=1 \
