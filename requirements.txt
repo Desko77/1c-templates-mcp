@@ -1,6 +1,10 @@
 chromadb>=1.1.0
 fastmcp>=2.12.0
 fastapi>=0.119.0
+# Starlette 1.0.0 removed the legacy TemplateResponse(name, context) signature
+# used in app/main.py. Pin until that code is migrated to the new
+# TemplateResponse(request, name, context) API.
+starlette<1.0
 uvicorn>=0.37.0
 sentence-transformers>=5.1.0
 torch>=2.8.0
