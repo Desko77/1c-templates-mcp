@@ -35,7 +35,21 @@ SERVER_NAME = "template-search-mcp"
 HTTP_PORT = int(os.getenv('HTTP_PORT', '8004'))
 
 # --- Embedding ---
+# Provider selector:
+#   auto   - try OpenAI-compatible API, fall back to local SentenceTransformer on failure (default)
+#   local  - always use local SentenceTransformer; never touch the API
+#   openai - require OpenAI-compatible API; fail loudly if unreachable (no silent fallback)
+EMBEDDING_PROVIDER = os.getenv('EMBEDDING_PROVIDER', 'auto').lower()
+if EMBEDDING_PROVIDER not in {'auto', 'local', 'openai'}:
+    logging.warning(f"Invalid EMBEDDING_PROVIDER={EMBEDDING_PROVIDER!r}, falling back to 'auto'")
+    EMBEDDING_PROVIDER = 'auto'
+
+# Local SentenceTransformer model (used when provider is 'local' or as fallback in 'auto')
+# Default: multilingual-e5-small (118M params, fast on CPU).
+# For better Russian quality with GPU available: 'ai-forever/ru-en-RoSBERTa' (404M).
 EMBEDDING_MODEL = os.getenv('EMBEDDING_MODEL', 'intfloat/multilingual-e5-small')
+
+# OpenAI-compatible API (used when provider is 'openai' or first attempt in 'auto')
 OPENAI_MODEL = os.getenv('OPENAI_MODEL')
 OPENAI_API_BASE = os.getenv('OPENAI_API_BASE')
 OPENAI_API_KEY = os.getenv('OPENAI_API_KEY', 'lm-studio')
@@ -49,4 +63,7 @@ TRANSPORT = "sse" if USESSE else "streamable-http"
 # --- Batch ---
 MAX_BATCH_SIZE = 100
 
-logging.info(f"Config: port={HTTP_PORT}, transport={TRANSPORT}, db={TEMPLATES_DB_PATH}, chroma={CHROMA_DB_PATH}")
+logging.info(
+    f"Config: port={HTTP_PORT}, transport={TRANSPORT}, db={TEMPLATES_DB_PATH}, "
+    f"chroma={CHROMA_DB_PATH}, embedding_provider={EMBEDDING_PROVIDER}"
+)

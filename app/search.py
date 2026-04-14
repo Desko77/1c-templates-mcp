@@ -9,9 +9,9 @@ import chromadb
 import numpy as np
 
 from app.config import (
-    CHROMA_DB_PATH, COLLECTION_NAME, EMBEDDING_MODEL, MAX_BATCH_SIZE,
-    MODEL_CACHE_PATH, OPENAI_API_BASE, OPENAI_API_KEY, OPENAI_MODEL,
-    RESET_CACHE,
+    CHROMA_DB_PATH, COLLECTION_NAME, EMBEDDING_MODEL, EMBEDDING_PROVIDER,
+    MAX_BATCH_SIZE, MODEL_CACHE_PATH, OPENAI_API_BASE, OPENAI_API_KEY,
+    OPENAI_MODEL, RESET_CACHE,
 )
 
 # Module-level state
@@ -26,9 +26,10 @@ def _normalize(text: str) -> str:
     return re.sub(r'\s+', ' ', text).strip()
 
 
-def _init_embedding_model():
-    """Try OpenAI-compatible API, fallback to local SentenceTransformer."""
+def _try_openai_api():
+    """Return an OpenAIEncoder on success, raise on any failure."""
     import os
+    import openai
 
     api_base = OPENAI_API_BASE
     if not api_base:
@@ -38,32 +39,26 @@ def _init_embedding_model():
             api_base = 'http://localhost:1234'
 
     openai_url = f"{api_base.rstrip('/')}/v1"
-    api_key = OPENAI_API_KEY
+    logging.info(f"Trying OpenAI-compatible API at {openai_url}...")
+    client = openai.OpenAI(base_url=openai_url, api_key=OPENAI_API_KEY)
+    api_model_name = OPENAI_MODEL if OPENAI_MODEL else EMBEDDING_MODEL
+    client.embeddings.create(input=["test"], model=api_model_name)
+    logging.info(f"Connected to API, model: {api_model_name}")
 
-    # Try OpenAI-compatible API
-    try:
-        import openai
-        logging.info(f"Trying OpenAI-compatible API at {openai_url}...")
-        client = openai.OpenAI(base_url=openai_url, api_key=api_key)
-        api_model_name = OPENAI_MODEL if OPENAI_MODEL else EMBEDDING_MODEL
-        client.embeddings.create(input=["test"], model=api_model_name)
-        logging.info(f"Connected to API, model: {api_model_name}")
+    class OpenAIEncoder:
+        def __init__(self, cl, mn):
+            self.client = cl
+            self.model_name = mn
 
-        class OpenAIEncoder:
-            def __init__(self, cl, mn):
-                self.client = cl
-                self.model_name = mn
+        def encode(self, texts, show_progress_bar=False):
+            response = self.client.embeddings.create(input=texts, model=self.model_name)
+            return np.array([item.embedding for item in response.data])
 
-            def encode(self, texts, show_progress_bar=False):
-                response = self.client.embeddings.create(input=texts, model=self.model_name)
-                return np.array([item.embedding for item in response.data])
+    return OpenAIEncoder(client, api_model_name)
 
-        return OpenAIEncoder(client, api_model_name)
 
-    except Exception as e:
-        logging.warning(f"API unavailable ({e}), falling back to local SentenceTransformer")
-
-    # Fallback: local model
+def _load_local_model():
+    """Load a local SentenceTransformer model. Raises on failure."""
     import torch
     from sentence_transformers import SentenceTransformer
 
@@ -85,6 +80,28 @@ def _init_embedding_model():
     m.encode(["warmup"])
     logging.info(f"Model loaded on {device}")
     return m
+
+
+def _init_embedding_model():
+    """Select embedding backend per EMBEDDING_PROVIDER:
+        'local'  - local SentenceTransformer only
+        'openai' - OpenAI-compatible API only (no fallback)
+        'auto'   - try API first, fall back to local on failure
+    """
+    if EMBEDDING_PROVIDER == 'local':
+        logging.info("EMBEDDING_PROVIDER=local - skipping API, loading SentenceTransformer")
+        return _load_local_model()
+
+    if EMBEDDING_PROVIDER == 'openai':
+        logging.info("EMBEDDING_PROVIDER=openai - API is required, no local fallback")
+        return _try_openai_api()
+
+    # auto
+    try:
+        return _try_openai_api()
+    except Exception as e:
+        logging.warning(f"API unavailable ({e}), falling back to local SentenceTransformer")
+        return _load_local_model()
 
 
 def init_search_engine(force_reindex: bool = False):

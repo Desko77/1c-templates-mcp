@@ -1,19 +1,65 @@
 services:
+  # Default service (CPU). Usage: docker compose up -d
+  # Runs without GPU passthrough. RoSBERTa on CPU: ~5-10 min first-time indexing.
   template-search-mcp:
     build: .
     container_name: template_search_mcp
+    profiles:
+      - cpu
     ports:
       - "8004:8004"
     environment:
       - RESET_CHROMA=true
       - RESET_CACHE=true
       - USESSE=false
-      - OPENAI_API_BASE=http://host.docker.internal:1234
-      - OPENAI_API_KEY=lm-studio
-      - OPENAI_MODEL=text-embedding-qwen3-embedding-0.6b
-      - EMBEDDING_MODEL=text-embedding-multilingual-e5-large-instruct
+      # --- Embedding provider selection ---
+      # auto   - try OpenAI-compatible API first, fall back to local on failure
+      # local  - local SentenceTransformer only (no external API calls)
+      # openai - OpenAI-compatible API only (no fallback, hard-fails if unreachable)
+      - EMBEDDING_PROVIDER=local
+      # --- Local SentenceTransformer (active in 'local' mode, fallback in 'auto') ---
+      # ai-forever/ru-en-RoSBERTa - best Russian quality (404M, ~1.6GB). First index 5-10 min on CPU.
+      # Alternatives:
+      #   intfloat/multilingual-e5-small   - CPU-friendly, fast (118M, ~450MB, 384 dim)
+      #   intfloat/multilingual-e5-large   - Good quality, GPU recommended (560M, 1024 dim)
+      - EMBEDDING_MODEL=ai-forever/ru-en-RoSBERTa
+      # --- OpenAI-compatible API (active in 'openai' mode, primary in 'auto') ---
+      # Uncomment to enable LM Studio / Ollama / vLLM / OpenAI integration.
+      # - OPENAI_API_BASE=http://host.docker.internal:1234
+      # - OPENAI_API_KEY=lm-studio
+      # - OPENAI_MODEL=text-embedding-multilingual-e5-large-instruct
     volumes:
       - app_data:/app/data
+    restart: unless-stopped
+
+  # GPU service (CUDA). Usage: docker compose --profile gpu up -d
+  # Requires: NVIDIA GPU + nvidia-container-toolkit on host.
+  # RoSBERTa on GPU: indexing under a minute.
+  template-search-mcp-gpu:
+    build: .
+    container_name: template_search_mcp_gpu
+    profiles:
+      - gpu
+    ports:
+      - "8004:8004"
+    environment:
+      - RESET_CHROMA=true
+      - RESET_CACHE=true
+      - USESSE=false
+      - EMBEDDING_PROVIDER=local
+      - EMBEDDING_MODEL=ai-forever/ru-en-RoSBERTa
+      # - OPENAI_API_BASE=http://host.docker.internal:1234
+      # - OPENAI_API_KEY=lm-studio
+      # - OPENAI_MODEL=text-embedding-multilingual-e5-large-instruct
+    volumes:
+      - app_data:/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
     restart: unless-stopped
 
 volumes:
