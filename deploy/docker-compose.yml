@@ -1,0 +1,56 @@
+services:
+  # CPU profile (default). Usage: docker compose up -d
+  template-search-mcp:
+    image: desko77/1c-templates-mcp:latest
+    container_name: template_search_mcp
+    ports:
+      - "${HTTP_PORT:-8004}:8004"
+    environment:
+      - RESET_CHROMA=${RESET_CHROMA:-true}
+      - RESET_CACHE=${RESET_CACHE:-true}
+      - USESSE=${USESSE:-false}
+      # auto | local | openai
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
+      # ai-forever/ru-en-RoSBERTa       - best Russian (404M, ~1.6GB). First index 5-10 min on CPU.
+      # intfloat/multilingual-e5-small  - fast (118M, ~450MB)
+      # intfloat/multilingual-e5-large  - good quality, GPU recommended (560M)
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-ai-forever/ru-en-RoSBERTa}
+      # Uncomment for openai/auto provider (LM Studio / Ollama / vLLM / OpenAI):
+      #- OPENAI_API_BASE=${OPENAI_API_BASE}
+      #- OPENAI_API_KEY=${OPENAI_API_KEY}
+      #- OPENAI_MODEL=${OPENAI_MODEL}
+    volumes:
+      - app_data:/app/data
+    restart: unless-stopped
+
+  # GPU profile. Usage: docker compose --profile gpu up -d
+  # Requires: NVIDIA GPU + nvidia-container-toolkit on host.
+  template-search-mcp-gpu:
+    image: desko77/1c-templates-mcp:latest
+    container_name: template_search_mcp_gpu
+    profiles:
+      - gpu
+    ports:
+      - "${HTTP_PORT:-8004}:8004"
+    environment:
+      - RESET_CHROMA=${RESET_CHROMA:-true}
+      - RESET_CACHE=${RESET_CACHE:-true}
+      - USESSE=${USESSE:-false}
+      - EMBEDDING_PROVIDER=${EMBEDDING_PROVIDER:-local}
+      - EMBEDDING_MODEL=${EMBEDDING_MODEL:-ai-forever/ru-en-RoSBERTa}
+      #- OPENAI_API_BASE=${OPENAI_API_BASE}
+      #- OPENAI_API_KEY=${OPENAI_API_KEY}
+      #- OPENAI_MODEL=${OPENAI_MODEL}
+    volumes:
+      - app_data:/app/data
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: 1
+              capabilities: [gpu]
+    restart: unless-stopped
+
+volumes:
+  app_data:
